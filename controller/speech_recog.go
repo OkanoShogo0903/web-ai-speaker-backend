@@ -6,7 +6,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/OkanoShogo0903/web-ai-speaker/web-ai-speaker-backend/model"
+	"github.com/OkanoShogo0903/web-ai-speaker-backend/model"
 	"github.com/gin-gonic/gin"
 )
 
