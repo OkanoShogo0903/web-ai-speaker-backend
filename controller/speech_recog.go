@@ -20,9 +20,6 @@ type Wikipedia struct {
 
 func SpeechPost(r *model.SpeechResult) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// TODO: CORSについて、どれだけの範囲を許可するかを決める、またはHelpに投稿してみる。
-		fmt.Println("SpeechPost!!!")
-
 		if err := c.BindJSON(&r); err != nil {
 			panic(err)
 		}
@@ -30,14 +27,14 @@ func SpeechPost(r *model.SpeechResult) gin.HandlerFunc {
 		// WakeWordの判定
 		wake := []rune("ハローワールド")
 		if strings.HasPrefix(r.Text, string(wake)) == false {
-			c.JSON(http.StatusNoContent, gin.H{"text": "wake word is not included"})
+			c.JSON(http.StatusNoContent, gin.H{"text": r.Text}) // Wake word is not included
 			return
 		}
 
 		// 入力テキストの整形
 		want_search := trimText(r.Text, string(wake))
 		if utf8.RuneCountInString(want_search) == 0 {
-			c.JSON(http.StatusNoContent, gin.H{"text": "input ward have no body"})
+			c.JSON(http.StatusNoContent, gin.H{"text": r.Text}) // "input ward have no body"
 			return
 		}
 
@@ -45,16 +42,14 @@ func SpeechPost(r *model.SpeechResult) gin.HandlerFunc {
 		fmt.Println(want_search)
 
 		mean, err := request2WordApi(&want_search)
-
 		if err != nil {
 			fmt.Printf("%+v", err)
-			//c.JSON(http.StatusOK, gin.H{"text": "err nil"})
-			c.JSON(http.StatusInternalServerError, gin.H{"text": "err"})
+			c.JSON(http.StatusInternalServerError, gin.H{"text": "no text"})
 			return
 		}
 		if mean == nil {
 			fmt.Printf("%+v", err)
-			c.JSON(http.StatusOK, gin.H{"text": "検索候補が見つかりませんでした", "question": want_search})
+			c.JSON(210, gin.H{"text": "検索候補が見つかりませんでした", "question": want_search})
 			return
 		}
 
