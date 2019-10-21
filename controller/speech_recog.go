@@ -25,7 +25,7 @@ func SpeechPost(r *model.SpeechResult) gin.HandlerFunc {
 		}
 
 		// WakeWordの判定
-		wake := []rune("ハローワールド")
+		wake := []rune("ハロー")
 		if strings.HasPrefix(r.Text, string(wake)) == false {
 			c.JSON(http.StatusNoContent, gin.H{"text": r.Text}) // Wake word is not included
 			return
