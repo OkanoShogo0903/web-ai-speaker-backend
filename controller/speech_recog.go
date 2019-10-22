@@ -3,7 +3,6 @@ package controller
 import (
 	"fmt"
 	"net/http"
-	"strings"
 	"unicode/utf8"
 
 	"github.com/OkanoShogo0903/web-ai-speaker-backend/model"
@@ -25,23 +24,30 @@ func SpeechPost(r *model.SpeechResult) gin.HandlerFunc {
 		}
 
 		// WakeWordの判定
-		wake := []rune("ハロー")
-		if strings.HasPrefix(r.Text, string(wake)) == false {
-			c.JSON(http.StatusNoContent, gin.H{"text": r.Text}) // Wake word is not included
-			return
-		}
+		wake := []rune("") // ハロー
+		/*
+			if strings.HasPrefix(r.Text, string(wake)) == false {
+				c.JSON(http.StatusNoContent, gin.H{"text": r.Text}) // Wake word is not included
+				return
+			}
+		*/
 
 		// 入力テキストの整形
-		want_search := trimText(r.Text, string(wake))
-		if utf8.RuneCountInString(want_search) == 0 {
-			c.JSON(http.StatusNoContent, gin.H{"text": r.Text}) // "input ward have no body"
+		want_search, err := trimText(r.Text, string(wake))
+		if err != nil {
+			fmt.Printf("%+v", err)
+			c.JSON(http.StatusNoContent, gin.H{"text": r.Text}) // Input ward have no keyword
+			return
+		}
+		if utf8.RuneCountInString(*want_search) == 0 {
+			c.JSON(http.StatusNoContent, gin.H{"text": r.Text}) // Input ward have no body
 			return
 		}
 
 		fmt.Println(r.Text)
-		fmt.Println(want_search)
+		fmt.Println(*want_search)
 
-		mean, err := request2WordApi(&want_search)
+		mean, err := request2WordApi(want_search)
 		if err != nil {
 			fmt.Printf("%+v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"text": "no text"})
@@ -49,10 +55,10 @@ func SpeechPost(r *model.SpeechResult) gin.HandlerFunc {
 		}
 		if mean == nil {
 			fmt.Printf("%+v", err)
-			c.JSON(210, gin.H{"text": "検索候補が見つかりませんでした", "question": want_search})
+			c.JSON(210, gin.H{"text": "検索候補が見つかりませんでした", "question": *want_search})
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"text": mean, "question": want_search})
+		c.JSON(http.StatusOK, gin.H{"text": mean, "question": *want_search})
 	}
 }

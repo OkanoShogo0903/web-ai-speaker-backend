@@ -43,7 +43,6 @@ func request2WordApi(word *string) (*string, error) {
 	url := "http://wikipedia.simpleapi.net/api?keyword=" + *word + "&output=json"
 
 	url = strings.Join(strings.Fields(url), "")
-	fmt.Println(url)
 	res, err := Get(url)
 	if err != nil {
 		return nil, err

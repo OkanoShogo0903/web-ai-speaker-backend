@@ -18,5 +18,11 @@ func main() {
 
 	router.POST("/speech", controller.SpeechPost(speech_result))
 
-	router.Run(":" + os.Getenv("PORT"))
+	port := ""
+	if len(os.Args) < 2 {
+		port = os.Getenv("PORT")
+	} else {
+		port = os.Args[1]
+	}
+	router.Run(":" + port)
 }
