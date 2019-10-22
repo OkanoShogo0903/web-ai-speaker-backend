@@ -3,30 +3,49 @@ package controller
 import (
 	"errors"
 	"strings"
+
+	"github.com/OkanoShogo0903/web-ai-speaker-backend/model"
 )
 
-func trimText(input_text string, wake string) (*string, error) {
-	t := strings.Replace(input_text, wake, "", 1)
+var search_keywords = []string{
+	"を調べて",
+	"で調べて",
+	"を検索",
+	"で検索",
+	"について",
+	"をついて",
+	"調べて",
+	"検索",
+}
+
+var bgm_keywords = []string{
+	"を再生して",
+	"を流して",
+	"を再生",
+}
+
+func KeywordCheck(input_text string) (*string, *model.State, error) {
 	// Remove space
-	t = strings.Replace(t, " ", "", -1)
-	b := t
-	// Remove noice
-	keywords := []string{
-		"を調べて",
-		"で調べて",
-		"を検索",
-		"で検索",
-		"について",
-		"をついて",
-		"調べて",
-		"検索",
-	}
-	for _, k := range keywords {
+	t := strings.Replace(input_text, " ", "", -1)
+
+	// Check keyword
+	save := t
+	for _, k := range search_keywords {
 		t = strings.Replace(t, k, "", -1)
 	}
-	if b == t {
-		var err = errors.New("no keyword")
-		return nil, err
+	if save != t {
+		m := model.Search
+		return &t, &m, nil
 	}
-	return &t, nil
+
+	for _, k := range bgm_keywords {
+		t = strings.Replace(t, k, "", -1)
+	}
+	if save != t {
+		m := model.Bgm
+		return &t, &m, nil
+	}
+
+	// No keyword
+	return nil, nil, errors.New("no keyword")
 }

@@ -13,10 +13,6 @@ type SpeechPostRequest struct {
 	Text string `json:"text"`
 }
 
-type Wikipedia struct {
-	Body string
-}
-
 func SpeechPost(r *model.SpeechResult) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if err := c.BindJSON(&r); err != nil {
@@ -24,8 +20,8 @@ func SpeechPost(r *model.SpeechResult) gin.HandlerFunc {
 		}
 
 		// WakeWordの判定
-		wake := []rune("") // ハロー
 		/*
+			wake := []rune("") // ハロー
 			if strings.HasPrefix(r.Text, string(wake)) == false {
 				c.JSON(http.StatusNoContent, gin.H{"text": r.Text}) // Wake word is not included
 				return
@@ -33,7 +29,7 @@ func SpeechPost(r *model.SpeechResult) gin.HandlerFunc {
 		*/
 
 		// 入力テキストの整形
-		want_search, err := trimText(r.Text, string(wake))
+		want_search, state, err := KeywordCheck(r.Text)
 		if err != nil {
 			fmt.Printf("%+v", err)
 			c.JSON(http.StatusNoContent, gin.H{"text": r.Text}) // Input ward have no keyword
@@ -47,18 +43,30 @@ func SpeechPost(r *model.SpeechResult) gin.HandlerFunc {
 		fmt.Println(r.Text)
 		fmt.Println(*want_search)
 
-		mean, err := request2WordApi(want_search)
-		if err != nil {
-			fmt.Printf("%+v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"text": "no text"})
-			return
-		}
-		if mean == nil {
-			fmt.Printf("%+v", err)
-			c.JSON(210, gin.H{"text": "検索候補が見つかりませんでした", "question": *want_search})
-			return
-		}
+		switch *state {
+		case model.Search:
+			mean, err := request2WordApi(want_search)
+			if err != nil {
+				fmt.Printf("%+v", err)
+				c.JSON(http.StatusInternalServerError, gin.H{"type": model.Search, "text": "no text"})
+				return
+			}
+			if mean == nil {
+				fmt.Printf("%+v", err)
+				c.JSON(210, gin.H{"type": model.Search, "title": *want_search, "text": "検索候補が見つかりませんでした"})
+				return
+			}
 
-		c.JSON(http.StatusOK, gin.H{"text": mean, "question": *want_search})
+			c.JSON(http.StatusOK, gin.H{"type": model.Search, "title": *want_search, "text": mean})
+		case model.Bgm:
+			title, videoid, err := request2YoutubeApi(want_search)
+			if err != nil {
+				fmt.Printf("%+v", err)
+				c.JSON(http.StatusNoContent, gin.H{"type": model.Bgm, "text": "no video"})
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{"type": model.Bgm, "title": *title, "videoid": *videoid})
+
+		}
 	}
 }
